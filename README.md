@@ -1,157 +1,248 @@
-# MCPShield Academy — Cyber Range Lab Development & Automation
+# MCPShield Academy
 
-**RedKross Research Foundation internship deliverable** · Standalone, localhost-only interactive teaching lab
+### Think like an attacker. Build like a defender.
 
-![MCPShield dashboard preview](screenshots/dashboard-preview.png)
+**A hands-on cyber range for Model Context Protocol (MCP) and AI-agent security.** Explore how tool-connected agents can fail, investigate simulated attacks, write the missing security controls, and prove your fixes with automated tests.
 
-## Project objective
+![MCPShield Academy — interactive cyber range](screenshots/01-academy-dashboard.png)
 
-Teach practical **MCP tool and AI-agent security** through five synthetic attack-and-defence exercises. Students investigate a deliberately insecure scenario, modify a JSON policy or a Python implementation, run automated tests, explain the defensive principle, and reset to try again. No external targets, real customer data, API keys, or paid LLM services are required.
+<p>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white">
+  <img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
+  <img alt="5 security missions" src="https://img.shields.io/badge/Missions-5-FF7069">
+  <img alt="40 application tests passed" src="https://img.shields.io/badge/Application%20tests-40%20passed-238636">
+  <img alt="Local training environment" src="https://img.shields.io/badge/Environment-local--only-555">
+</p>
 
-This is **not** a production-grade MCP gateway or a full LLM exploit framework. The browser's agent flow is an illustration; the indirect prompt injection exercise is a deterministic simulation. The standalone MCP server **does** expose real MCP tools over Streamable HTTP for inspection.
+> **The idea:** A security demo shows you what went wrong. MCPShield asks you to **fix it**. Each mission combines evidence, vulnerable-versus-hardened behaviour, an editable security policy, a knowledge check, and a separate Python coding challenge.
 
-## Quick start — Docker (recommended for instructors)
+**[Get started](#quick-start)** · **[Explore the missions](#five-security-missions)** · **[Try the coding lab](#hands-on-python-defence-engineering)** · **[Architecture](#architecture)** · **[Documentation](#documentation)**
 
-Prerequisites: Docker Desktop with Linux containers and Docker Compose v2.
+---
 
-```powershell
+## What makes this different?
+
+- **Attack → defend → verify.** Reproduce a controlled failure, identify the trust boundary, implement a rule, and test both allowed and denied behaviour.
+- **Two practical learning tracks.** Repair structured JSON security policies in the browser, then implement corresponding defensive logic in editable Python files.
+- **A real MCP endpoint.** A separate Python MCP server exposes security training tools via **Streamable HTTP**, which can be explored using MCP Inspector.
+- **Deterministic, repeatable labs.** Synthetic alerts, tool metadata, attack strings and audit events mean no external accounts, API keys, paid models or live targets are required.
+- **Containerised by default.** Two Docker services are bound to the host's loopback interface, with read-only filesystems, dropped capabilities and restricted privileges.
+
+### At a glance
+
+| | |
+|---|---|
+| **Audience** | Cybersecurity students, SOC analysts, AI-security learners and instructors |
+| **Format** | Interactive browser range + local Python coding exercises |
+| **Scope** | 5 missions covering access control, tool poisoning, prompt injection, least privilege and audit detection |
+| **Stack** | Python, MCP Python SDK, HTML/CSS/JavaScript, pytest, Docker Compose |
+| **Dashboard** | `http://127.0.0.1:8088` |
+| **MCP endpoint** | `http://127.0.0.1:8000/mcp` |
+| **Last locally verified application suite** | **40 passed**, 0 failed, inside Docker |
+
+## Quick start
+
+### Option A — Docker (recommended)
+
+**Prerequisites:** Docker Desktop / Docker Engine with Linux containers and Docker Compose.
+
+```bash
+git clone https://github.com/jaden-mas1010/mcpshield-academy.git
+cd mcpshield-academy
 docker compose up --build -d
 docker compose ps
 ```
 
-- **Student dashboard:** http://127.0.0.1:8088
-- **MCP endpoint:** http://127.0.0.1:8000/mcp (protocol endpoint, **not** a browser page)
-- To inspect MCP tools, launch [MCP Inspector](https://github.com/modelcontextprotocol/inspector), connect with Streamable HTTP to the MCP endpoint, and click **List Tools**. It requires a recent Node.js/npm installation.
+Open **[http://127.0.0.1:8088](http://127.0.0.1:8088)** on the same computer and select a mission.
 
-```powershell
-# Tests run inside an ephemeral project container, not student browser
-# Check main application tests (coding starter exercise failures excluded):
-docker compose run --rm --no-deps academy python -m pytest -v --import-mode=importlib
+The stack starts two separate services:
 
-# Check Mission 01 reference solution:
-docker compose run --rm --no-deps academy python grade_mission01.py
+| Service | Port | Purpose |
+|---|---|---|
+| `academy` | `127.0.0.1:8088` | Mission dashboard, attack walkthroughs and JSON-policy grading |
+| `mcp` | `127.0.0.1:8000` | MCP tool server for protocol-level exploration |
 
-# Stop and remove the running containers:
+**Verify the application:**
+
+```bash
+docker compose exec academy python -m pytest -q -p no:cacheprovider --import-mode=importlib
+```
+
+The main suite was verified with **40 passing tests**. The intentionally failing *student coding exercises* are separate from this application suite.
+
+**Shut down:**
+
+```bash
 docker compose down
 ```
 
-Compose publishes both ports to the **host loopback interface only** (`127.0.0.1`). Containers listen on internal addresses to allow Docker forwarding. Keep this a local-only lab, never deploy intentionally vulnerable mode to the open internet.
+> The MCP URL is a protocol endpoint, **not** a normal web page. Use an MCP client such as [MCP Inspector](https://github.com/modelcontextprotocol/inspector) to connect using **Streamable HTTP**.
 
-## Quick start — Windows / local Python
+### Option B — Windows PowerShell (local Python)
 
-Python **3.11+** is required; Node.js is optional for MCP Inspector.
+**Prerequisite:** Python 3.11 or newer.
 
 ```powershell
+git clone https://github.com/jaden-mas1010/mcpshield-academy.git
+cd mcpshield-academy
 py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe dashboard.py
 ```
 
-Open http://127.0.0.1:8088. In a **second terminal** (only for the real MCP protocol demo):
+Open **http://127.0.0.1:8088**. To run the MCP server as well, open a **second PowerShell terminal** in the same directory:
 
 ```powershell
 .\.venv\Scripts\python.exe server.py
 ```
 
-Then run tests in a third terminal:
+Do not run these local servers at the same time as Docker's published ports; both modes use ports `8088` and `8000`.
+
+## Five security missions
+
+| Mission | Threat | Your defensive objective |
+|---|---|---|
+| **01 — The Exposed Alert** | Broken object-level authorisation (BOLA / IDOR) | Stop an analyst from reading another analyst's assigned alert while preserving legitimate access. |
+| **02 — The Poisoned Tool** | Tampered MCP tool descriptions | Compare tool definitions against a trusted manifest and reject unknown or modified metadata. |
+| **03 — Instructions in the Logs** | Indirect prompt injection | Treat tool-response content as untrusted data; never allow embedded instructions to authorise privileged actions. |
+| **04 — The Overpowered Agent** | Excessive agency / tool permissions | Give an investigation agent only the specific tools it needs; block destructive or administrative actions. |
+| **05 — Hunt the Suspicious Calls** | Abnormal MCP tool use | Detect privilege abuse, tool tampering and repeated access denials without flagging normal activity. |
+
+Each mission follows the same cycle:
+
+**Inspect evidence → Run the vulnerable demonstration → Compare the secure behaviour → Repair the JSON policy → Validate → Explain the fix.**
+
+Clicking through an attack simulation **does not** earn completion; the browser workshop checks the student's proposed policy and understanding.
+
+![Mission interface — The Exposed Alert](screenshots/02-security-mission.png)
+
+## Hands-on Python Defence Engineering
+
+The browser workshop is an introduction. The **Python Defence Engineering** track asks learners to write the actual security decisions and run isolated, mission-specific tests.
+
+![Student-editable Python security challenge](screenshots/03-coding-lab.png)
+
+**Try Mission 01:**
+
+1. Open `code_lab/challenges/mission01.py` in VS Code.
+2. Find the missing object-ownership check.
+3. Run its tests and observe the failure on the intentionally vulnerable starter.
+4. Edit `can_read_alert(...)` to apply both role permissions **and** record ownership.
+5. Rerun the tests until legitimate reads work and unauthorised reads are denied.
+
+On Windows, from the project root:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -v --import-mode=importlib
+.\.venv\Scripts\python.exe -m code_lab.runner --mission 1
 ```
 
-## The five missions
-
-| Mission | Topic | Student repair | Validation |
-|---|---|---|---|
-| 01 · The Exposed Alert | Broken object-level authorisation (BOLA/IDOR) | Enforce alert ownership as well as role permissions | Allowed own record, denied other record, missing owner rejected |
-| 02 · The Poisoned Tool | MCP tool description tampering | Verify tool metadata against trusted manifest | Known tools accepted, altered/unknown definitions rejected |
-| 03 · Instructions in the Logs | Indirect prompt injection | Ignore instructions in tool-response data; independently approve privileged actions | Untrusted commands blocked; authorised summary/closure allowed |
-| 04 · The Overpowered Agent | Excessive agency / least privilege | Limit the agent to investigation tools | Safe tools still work; destructive/admin tools blocked |
-| 05 · Hunt Suspicious Calls | MCP audit analysis | Tune tamper, privilege and repeated-denial detection | Three synthetic threats detected without flagging normal events |
-
-Each browser mission has **Evidence → Investigate → Edit JSON → Validate → Explain → Reset**. The button-based vulnerable/secure comparison is for demonstration only and does **not** complete a mission.
-
-**Recommended Python Defence Engineering track:** Every mission now includes its own student-editable Python module (`code_lab/challenges/mission01.py` through `mission05.py`), independent security tests and a production-engineering explanation. The dashboard includes a Python scratch editor, hints, download/copy buttons and test commands. Browser Python is **never** executed by the dashboard.
-
-To work on one mission locally, edit the matching file in VS Code, then run:
+Check all five coding missions:
 
 ```powershell
-python -m code_lab.runner --mission 1
+.\.venv\Scripts\python.exe -m code_lab.runner
 ```
 
-To check all five coding missions:
+Reset a mission to its starter version, saving a backup of your work:
 
 ```powershell
-python -m code_lab.runner
+.\.venv\Scripts\python.exe -m code_lab.reset --mission 1 --yes
 ```
 
-Students can reset a mission with a backup:
+**Expected teaching behaviour:** On fresh, intentionally insecure Python starters, **8 of 23 tests pass and 15 fail**. Those failures are the exercises, not regressions in the application. The separately verified instructor reference implementations pass all 23 coding checks.
 
-```powershell
-python -m code_lab.reset --mission 1 --yes
-```
+> The browser's Python editor is a **scratchpad**, not a code-execution service. Download or copy your edited code into `code_lab/challenges/`, then run tests locally. Browser-submitted Python is never executed by the Academy server.
 
-Read [Coding Lab Guide](code_lab/README.md) and [Production Bridge](code_lab/PRODUCTION_BRIDGE.md). The 23 coding tests intentionally include 15 failures before students implement their fixes. The instructors' reference implementations pass all 23. The old combined starter is retained for backward compatibility: `code_lab/student_tasks.py`. Run it with:
+See the [Coding Lab Guide](code_lab/README.md) and [Production Bridge](code_lab/PRODUCTION_BRIDGE.md) for the complete workflow and how these teaching controls differ from production engineering.
 
-```powershell
-python -m pytest code_lab/checks_missions.py -v --import-mode=importlib
-```
+## Architecture
 
-**Legacy combined starter:** five tests pass, five fail (intentional); the student repairs those functions to reach ten passes. New students should use the five separate coding missions. These deliberate failures are excluded from the default project test suite.
+![MCPShield architecture](docs/architecture.png)
 
-## Test and reset
+The system has **two distinct paths**:
 
-- Main automated tests: `python -m pytest -v --import-mode=importlib`
-- Independent browser-grader tests: `python -m pytest tests/test_student_lab.py -v --import-mode=importlib`
-- Python Mission 01 grader: `python grade_mission01.py`
-- Browser lab: use **Reset starter** for the JSON policy; no filesystem changes needed
-- Python Mission 01 reset: `python reset_mission01.py --reset` (backs up the current solution in `.lab-backups/`, then restores deliberately vulnerable starter)
+**1. Interactive learning path** — Browser → `dashboard.py` → mission simulations / `student_lab.py` JSON-policy grader. The animated agent/tool traces illustrate security decisions; they do **not** represent live model reasoning or captured MCP traffic.
 
-**After resetting Mission 01 source**, some *reference-solution tests must fail intentionally*. To restore secure reference behaviour, return the implementation in `missions/mission01.py` to the tested secure code or retrieve the saved backup; restart `server.py` to reload code.
+**2. MCP protocol path** — MCP Inspector → `server.py` → real MCP tools → synthetic alerts, security checks and simulated responses. The endpoint speaks MCP over Streamable HTTP, but its classroom identity (`LAB_ROLE`, `LAB_USER`) is configured server-wide rather than authenticated per request.
 
-## Files
+The **Python coding track** is separate from both: learners edit `code_lab/challenges/missionNN.py` on their own machines and run pytest. The web application never executes their submissions.
+
+### Explore the actual MCP tools
+
+With the `mcp` service running:
+
+1. Open [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
+2. Connect via **Streamable HTTP** to `http://127.0.0.1:8000/mcp`.
+3. List available tools and try `read_alert` or `investigate_security_logs`.
+4. Compare tool results with the educational scenarios in the dashboard.
+
+The MCP tools work against **synthetic records**; the prompt-injection demonstration is **deterministic, without an LLM**.
+
+## Testing & evidence
+
+| Test layer | What it checks | Expected result |
+|---|---|---|
+| Application suite (`tests/`) | Server functions, missions, dashboard routes, grading, resets and student-lab behaviour | **40 passed** on the verified Docker run |
+| Coding exercises (`code_lab/tests/`) | Whether learners implemented actual defensive controls | Intentionally red on fresh starters: **8 pass / 15 fail** |
+| Container status | Dashboard and MCP server can run together | Both services `Up` |
+| Manual protocol check | MCP Inspector connects and lists/calls tools | Confirm separately using Inspector |
+
+Application-suite evidence:
+
+![40 passing application tests](screenshots/04-tests-passed.png)
+
+Container deployment evidence:
+
+![Both Docker services running](screenshots/05-docker-deployment.png)
+
+## Project structure
 
 ```text
-MCPShield/
-├── server.py                       # Real MCP protocol tool server (port 8000)
-├── dashboard.py                    # Local HTTP teaching UI server (port 8088)
-├── dashboard/                      # Animated browser interface
-├── student_lab.py                  # Safe JSON policy grader (five missions)
-├── missions/                       # Reference security logic, synthetic attacks & logs
-├── code_lab/                       # Five separate coding exercises, pytest + production bridge
-├── tests/                          # Application and reference tests
-├── starter/                        # Mission 01 vulnerable reset template
-├── grade_mission01.py
-├── reset_mission01.py
+mcpshield-academy/
+├── dashboard/              # Browser interface, styles and animations
+├── dashboard.py             # Local dashboard server and JSON APIs
+├── server.py                # Streamable HTTP MCP tool server
+├── missions/                # Five threat simulations and security decisions
+├── student_lab.py           # JSON policy validation and grading
+├── code_lab/
+│   ├── challenges/         # Five editable Python exercises
+│   ├── tests/              # Independent security checks for learners
+│   ├── runner.py           # Per-mission and full-track test runner
+│   └── reset.py            # Backup + reset utility
+├── tests/                   # Application and reference test suite
+├── docs/                    # Architecture, student, instructor and ops guides
+├── screenshots/             # Dashboard, exercise and deployment evidence
+├── compose.yaml             # Two localhost-bound Docker services
 ├── Dockerfile
-├── compose.yaml
-├── docs/
-│   ├── architecture.png
-│   ├── architecture.md
-│   ├── STUDENT_GUIDE.md
-│   ├── INSTRUCTOR_GUIDE.md
-│   ├── TESTING.md
-│   ├── OPERATIONS.md
-│   └── DEMO_SCRIPT.md
-└── screenshots/                    # Reference UI previews, replace with own captures
+└── requirements.txt
 ```
-
-## Isolation & responsible use
-
-- Everything is fictional and uses reserved documentation IP addresses (`192.0.2.10`, `198.51.100.25`).
-- This project must only run on owned/authorised equipment. Do not point it at real organisations or systems.
-- The dashboard receives fixed-format JSON policies and **does not execute arbitrary Python submitted through the browser**.
-- The coding track is local Python and must never execute submissions from strangers on a shared machine.
-- MCP role and user are simulated **server-wide environment settings**, not cryptographically verified user identities.
-- The dashboard doesn't consume live MCP traffic; Mission 03 does not use an LLM; Mission 05 logs are static fixtures.
-- `.env`, personal backup files and virtual environments are excluded from Git via `.gitignore`.
 
 ## Documentation
 
-Read [Architecture](docs/architecture.md), [Student Guide](docs/STUDENT_GUIDE.md), [Instructor Guide](docs/INSTRUCTOR_GUIDE.md), [Testing](docs/TESTING.md), [Start / Reset / Troubleshoot / Shutdown](docs/OPERATIONS.md), and [Demo Script](docs/DEMO_SCRIPT.md).
+| Guide | What you'll find |
+|---|---|
+| [Student Guide](docs/STUDENT_GUIDE.md) | Learning objectives, mission workflow and reflection prompts |
+| [Instructor Guide](docs/INSTRUCTOR_GUIDE.md) | Teaching plan and evaluation guidance |
+| [Coding Lab](code_lab/README.md) | Editable exercises, tests and reset commands |
+| [Production Bridge](code_lab/PRODUCTION_BRIDGE.md) | Where educational controls differ from deployable security |
+| [Architecture](docs/architecture.md) | Components, data paths and trust boundaries |
+| [Testing](docs/TESTING.md) | Test scope and expected results |
+| [Operations](docs/OPERATIONS.md) | Setup, troubleshooting, resets and shutdown |
+| [Demo Script](docs/DEMO_SCRIPT.md) | Guided three-minute walkthrough |
 
-Official dependencies: [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/) and [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
+## Safety and limitations
 
-## Licence and ownership
+MCPShield Academy is an **educational cyber range**, not a production MCP firewall, security scanner or autonomous agent platform.
 
-This training artifact is submitted for internship assessment. Intellectual property, publication, and reuse rights are governed by the applicable internship terms. No RedLens source code, credentials, or private repositories should be included.
+- All identities, alerts, attacks and event logs are **synthetic**. No external targets or real organisational data are used.
+- Services are published to **`127.0.0.1` only**. Do not expose deliberately vulnerable modes to public networks or deploy this demo as an internet-facing service.
+- Browser demonstrations are scripted / deterministic. **There is no live LLM, real-world intrusion detection or production-grade identity system.**
+- Python submitted through the browser is **not executed**; local coding tasks should be run only in an environment you control.
+- Passing training tests demonstrates specific teaching objectives, **not production readiness**. Real services need verified identity, protected trust stores, tenant isolation, monitoring and end-to-end review.
+
+## About this project
+
+Built as an independent **Cyber Range Lab Development & Automation** internship assignment for **RedKross Research Foundation**, with a focus on connecting AI-agent threat concepts to **hands-on secure coding and verifiable defensive behaviour**.
+
+**Author:** [Jaden Mascarenhas](https://github.com/jaden-mas1010) · [Portfolio](https://jaden-mas1010.github.io)
+
+*Project publication and reuse remain subject to applicable internship and intellectual-property terms.*
