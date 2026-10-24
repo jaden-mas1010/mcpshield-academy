@@ -1,0 +1,5 @@
+"""INTENTIONALLY VULNERABLE starter; never use outside isolated training."""
+def can_read_alert(role: str, user: str, alert: dict) -> bool:
+    if role in ['analyst', 'supervisor']:
+        return True
+    return False

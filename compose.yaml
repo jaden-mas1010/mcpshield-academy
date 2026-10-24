@@ -1,0 +1,39 @@
+# Local training only. Published ports are reachable only from this machine.
+services:
+  academy:
+    build: .
+    command: ["python", "dashboard.py"]
+    environment:
+      DASHBOARD_HOST: "0.0.0.0" # needed inside container, while host bind stays loopback
+    ports:
+      - "127.0.0.1:8088:8088"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 512m
+    restart: "no"
+  mcp:
+    build: .
+    command: ["python", "server.py"]
+    environment:
+      MCP_HOST: "0.0.0.0"
+      LAB_MODE: "secure"
+      LAB_ROLE: "analyst"
+      LAB_USER: "alice"
+    ports:
+      - "127.0.0.1:8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 512m
+    restart: "no"

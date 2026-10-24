@@ -1,0 +1,25 @@
+digraph MCPShield {
+  graph [bgcolor="#0e1525",pad="0.42",nodesep="0.6",ranksep="0.8",fontname="DejaVu Sans",rankdir="TB",label="MCPShield Academy | Cyber Range Architecture",fontcolor="#f0f6ff",fontsize=19,labelloc="t"];
+  node [shape=box,style="rounded,filled",color="#5186B8",fillcolor="#1c2940",fontcolor="#ffffff",fontname="DejaVu Sans",fontsize=11,margin="0.22,0.16",penwidth=1.2];
+  edge [color="#80C9EB",penwidth=1.5,arrowsize=0.75,fontcolor="#c5d9ee",fontname="DejaVu Sans",fontsize=9];
+  browser [label="Student Browser\nMission cards | JSON editor | Feedback",fillcolor="#233A51"];
+  ui [label="Dashboard Server :8088\nHTTP /api/run | /api/grade | /api/lab",fillcolor="#20385B"];
+  grading [label="Security Policy Grader\nSchema checks | behavioural cases | quiz",fillcolor="#24453c",color="#5bbc9b"];
+  modules [label="Mission 01-05 Modules\nRBAC/BOLA | Metadata | Injection\nLeast privilege | Audit detection",fillcolor="#27354b"];
+  inspector [label="MCP Inspector\nProtocol Client",fillcolor="#233A51"];
+  mcp [label="Real MCP Server :8000/mcp\nStreamable HTTP | Synthetic tools",fillcolor="#20385B"];
+  exercises [label="Optional Python Coding Track\nstudent_tasks.py + pytest",fillcolor="#443b2c",color="#e8a362"];
+  docker [label="Docker Compose\nHost port mappings: 127.0.0.1 only",fillcolor="#292e42",color="#a1a6db"];
+  browser -> ui [label="localhost HTTP"];
+  ui -> grading [label="Edit and validate"];
+  ui -> modules [label="Run demonstration"];
+  grading -> modules [style=dashed,label="Behaviour tests"];
+  inspector -> mcp [label="MCP protocol"];
+  mcp -> modules [label="Invoke real Python tools"];
+  exercises -> modules [style=dotted,arrowhead=none,label="Same learning objectives"];
+  docker -> ui [style=dashed,color="#a1a6db"];
+  docker -> mcp [style=dashed,color="#a1a6db"];
+  {rank=same; browser inspector}
+  {rank=same; ui mcp}
+  {rank=same; grading modules exercises}
+}
